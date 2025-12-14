@@ -214,6 +214,65 @@ public class TabulatedFunctions {
                 "Ошибка при создании объекта класса " + clazz.getName(), e);
         }
     }
+    // Добавление перегруженных методов чтения через рефлексию
+        public static TabulatedFunction inputTabulatedFunction(
+            Class<?> clazz, InputStream in) throws IOException {
+        if (!TabulatedFunction.class.isAssignableFrom(clazz)) {
+            throw new IllegalArgumentException(
+                "Класс " + clazz.getName() + " не реализует интерфейс TabulatedFunction");
+        }
+        
+        DataInputStream dataIn = new DataInputStream(in);
+        
+        // Читаем количество точек
+        int pointsCount = dataIn.readInt();
+        
+        // Читаем координаты точек
+        FunctionPoint[] points = new FunctionPoint[pointsCount];
+        for (int i = 0; i < pointsCount; i++) {
+            double x = dataIn.readDouble();
+            double y = dataIn.readDouble();
+            points[i] = new FunctionPoint(x, y);
+        }
+        
+        // Используем рефлексивный метод создания
+        return createTabulatedFunction(clazz, points);
+    }
+    public static TabulatedFunction readTabulatedFunction(
+            Class<?> clazz, Reader in) throws IOException {
+        if (!TabulatedFunction.class.isAssignableFrom(clazz)) {
+            throw new IllegalArgumentException(
+                "Класс " + clazz.getName() + " не реализует интерфейс TabulatedFunction");
+        }
+        
+        StreamTokenizer tokenizer = new StreamTokenizer(in);
+        
+        // Читаем количество точек
+        if (tokenizer.nextToken() != StreamTokenizer.TT_NUMBER) {
+            throw new IOException("Ожидалось число (количество точек)");
+        }
+        int pointsCount = (int) tokenizer.nval;
+        
+        // Читаем координаты точек
+        FunctionPoint[] points = new FunctionPoint[pointsCount];
+        for (int i = 0; i < pointsCount; i++) {
+            if (tokenizer.nextToken() != StreamTokenizer.TT_NUMBER) {
+                throw new IOException("Ожидалось число (координата X)");
+            }
+            double x = tokenizer.nval;
+            
+            if (tokenizer.nextToken() != StreamTokenizer.TT_NUMBER) {
+                throw new IOException("Ожидалось число (координата Y)");
+            }
+            double y = tokenizer.nval;
+            
+            points[i] = new FunctionPoint(x, y);
+        }
+        
+        // Используем рефлексивный метод создания
+        return createTabulatedFunction(clazz, points);
+    }
+    
     public static TabulatedFunction tabulate(
         Class<?> clazz, Function function, double leftX, double rightX, int pointsCount) {
     if (leftX < function.getLeftDomainBorder() || rightX > function.getRightDomainBorder()) {
